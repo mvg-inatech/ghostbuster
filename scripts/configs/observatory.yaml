@@ -1,0 +1,78 @@
+# The Observatory Quarter, from the public Oxford Spires dataset. Used for the
+# transfer test: a different sensor (Hesai QT64) and a site we did not record.
+#
+# The ground truth is a Leica RTC360 project like our own scenes, so the same
+# labelling pipeline applies unchanged. The sensor is a Hesai QT64, so
+# reflectivity and ambient do not exist here and are simply absent; family B is
+# computed from a 64 x 600 azimuth grid rebuilt in the SLAM.
+#
+# Paths are absolute and point at our own storage; change them before running.
+
+name: observatory
+slam_las: /Data/pointconfidence/public/oxford_spires/slam_ds02/observatory-quarter-01_global/global_map.pcd
+
+gt_groups:
+  - name: observatory
+    # Station-tagged merged cloud and its sidecar, built by merge_gt_e57.py
+    # from the published E57 stations.
+    merged_gt_las: /Data/pointconfidence/public/oxford_spires/observatory-quarter/gt/merged/observatory_gt.las
+    # Taken from the dataset's own ground-truth trajectory instead of the
+    # automatic coarse search: the reference covers a much larger area than
+    # the SLAM run and the architecture is repetitive, so the search is
+    # unreliable here.
+    initial_matrix: [
+      [0.990005562, -0.140279987, 0.014509054, -85.829889414],
+      [0.140356094, 0.990091479, -0.004362416, 21.644108315],
+      [-0.013753331, 0.006355251, 0.999885222, 0.724605123],
+      [0.000000000, 0.000000000, 0.000000000, 1.000000000]]
+
+output_frame: observatory
+
+coarse:
+  # Ignored while initial_matrix is set (process_group prefers it), kept so the
+  # search can be re-enabled by removing the matrix above.
+  enabled: true
+  # Repetitive architecture gives several near-equal yaw peaks, so probe the
+  # distinct ones with a short ICP rather than trusting the correlation score.
+  n_candidates: 4
+  slam_percentile: 0.1
+  cell: 0.25
+  # Height band above the local ground for the structure raster. Stop below
+  # the roofline: seen from above a roof fills every cell and correlates with
+  # everything, as the ground does.
+  band: [1.0, 8.0]
+  yaw_step: 2.0
+  refine_step: 0.25
+
+visibility:
+  resolution: 0.05
+  eps0: 0.02
+  eps_rate: 0.002
+  behind_tolerance: 0.10
+
+rounds: 2
+
+icp:
+  # Levels sized for a dense core of roughly 60-80 m across.
+  levels:
+    - [0.30, 0.90]
+    - [0.15, 0.45]
+    - [0.08, 0.20]
+  max_iter: 60
+  tukey_k: 0.08
+
+knn:
+  enabled: true
+  k: 6
+  margin: 1.0
+  recompute: false
+
+tau: 0.05
+c2c_max_dist: 0.50
+
+gt_crop:
+  enabled: false
+  radius: 0.50
+
+tile_size: null
+tile_budget: 8000000

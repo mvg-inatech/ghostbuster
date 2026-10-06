@@ -1,0 +1,117 @@
+This directory contains a modified version of Voxel-SLAM.
+
+  Upstream:  https://github.com/hku-mars/Voxel-SLAM
+  Copyright: the Voxel-SLAM authors (MARS Lab, University of Hong Kong)
+  Licence:   GNU General Public License, version 2 or later (see LICENSE)
+
+The original copyright and licence are unchanged. This modified version is
+distributed under the same terms: GPL-2.0-or-later.
+
+
+Modifications
+-------------
+
+Changed between 2026-05 and 2026-10, to record a per-point confidence channel
+set while the SLAM runs rather than reconstructing one afterwards, and to fix
+problems met on our recordings. GPL-2.0 section 2(a) requires changed files to
+say so. Compared against upstream at the time of writing:
+
+NEW FILE
+
+  src/range_image.hpp     Within-scan "detachment" channels, computed on the
+                          raw organised scan before any downsampling:
+                          range_detach, range_edge, int_detach, ring_rough.
+                          Each point's range is extrapolated along its detector
+                          row from three cells on either side, skipping the
+                          immediate neighbours, and the residual is normalised
+                          by range. Nothing upstream corresponds to this.
+
+CHANGED FILES
+
+  src/voxelslam.cpp       The largest change.
+                          - Per-point and per-scan confidence values recorded
+                            from the IEKF frontend and the local bundle
+                            adjustment, and written with each saved scan.
+                          - SaveFields/* parameters to choose which channels
+                            are written.
+                          - FIX, off-by-one in the plane gate: upstream sets
+                            `min_point << 5, 5, 5, 5`, a fixed four entries,
+                            while plane_judge() indexes it by layer over the
+                            inclusive range 0..max_layer. With max_layer = 4 the
+                            deepest layer read past the end of the vector. It is
+                            now sized max_layer+1, with LocalBA/min_point_deepest
+                            to set the deepest layer explicitly.
+                          - save_pose() no longer dereferences an empty buffer.
+
+  src/voxel_map.hpp       - pointVar carries the confidence fields (balm_res,
+                            ekf_res, plane_quality, cell_id, reflectivity,
+                            ambient, ring, scan_time, the family-B channels)
+                            and the per-voxel statistics obs_count,
+                            view_diversity and temp_consistency, accumulated
+                            incrementally as scans are inserted.
+                          - a leaf query used when the scans are merged.
+
+  src/tools.hpp           - The confidence fields added to the point struct and
+                            registered with PCL, so they survive into the saved
+                            clouds.
+                          - CHANGED BEHAVIOUR, down_sampling_voxel() takes an
+                            `average_xyz` flag. Upstream always replaces the
+                            points in a voxel with their running centroid. With
+                            the flag false the first point in the voxel is kept
+                            instead, so every saved point is a real measurement
+                            rather than an average of several. Default true,
+                            which is upstream's behaviour.
+
+  src/feature_point.hpp   - Sensor handlers fill the new fields.
+                          - The Hesai handler rebuilds an organised range image
+                            from ring index and azimuth, which that driver does
+                            not provide, so the within-scan channels exist for
+                            it too.
+
+  src/ekf_imu.hpp         FIX: motion_blur() returns bool instead of calling
+                          exit(0) when a scan's timestamps regress against the
+                          previous scan. A recording stall used to abort the
+                          whole run; the affected scan is now skipped.
+
+  src/voxelslam.hpp       Plumbing for the above.
+
+  src/loop_refine.hpp     Uses PointType rather than pcl::PointXYZINormal when
+                          reading the nearest target point, so the normal
+                          fields are the ones this build actually stores.
+
+  scripts/                global_pcd_converter.py merges the saved scans into
+                          one global cloud using the final trajectory and
+                          completes the per-voxel statistics over the session.
+                          Not part of upstream Voxel-SLAM.
+
+  CMakeLists.txt          - Raises the Boost.MPL vector and list limits to 30.
+                          The extended point type carries 23 registered fields,
+                          and PCL's field list is built with Boost.MPL, whose
+                          containers default to 20; going over that fails as
+                          "no type named 'type' in struct pcl::traits::fieldList".
+                          - Adds -g to keep line numbers in backtraces, and
+                          drops the livox_ros_driver dependency, which we do
+                          not use.
+
+  launch/, config/        Settings for the sensors used in our experiments:
+                          vxlm_ouster.launch and ouster.yaml retargeted at our
+                          platform's topics, and vxlm_oxford_spires.launch with
+                          oxford_spires_ds02.yaml added for the Hesai QT64 of
+                          the Oxford Spires dataset. config/hesai.yaml is
+                          upstream and unchanged.
+
+UNCHANGED
+
+  src/BTC.cpp, src/BTC.h, src/preintegration.hpp are upstream as published.
+
+Everything not listed above is upstream Voxel-SLAM.
+
+
+Scope
+-----
+
+The GPL covers this directory. The rest of this repository -- the labelling,
+feature and evaluation code under ../scripts -- is a separate work that reads
+the files this SLAM writes. It does not link against or include any part of
+Voxel-SLAM, and is distributed alongside it as an aggregate, which GPL-2.0
+section 2 permits. See the top-level README for its licence.

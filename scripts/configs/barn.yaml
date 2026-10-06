@@ -1,0 +1,189 @@
+# The barn scene. It is referenced by five RTC360 projects, so the groups below
+# are registered separately and each one starts from a transform already fitted
+# for this cloud rather than from the coarse search. Paths are absolute and
+# point at our storage; change them before running.
+#
+name: barn
+slam_las: /Data/pointconfidence/scheune_run/attempt_r1/scheune_level/global_map.pcd
+gt_groups:
+- name: barn1_main
+  files:
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 001.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 002.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 003.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 004.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 005.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 006.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 007.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 008.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 009.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 010.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 011.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 012.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 013.e57
+  merged_gt_las: /Data/pointconfidence/train/gt/merged/scheune1_main_ring_gt.las
+  initial_matrix:
+  - - -0.9231083189141935
+    - 0.38428889619003265
+    - 0.013895172416119981
+    - -16.925484276474542
+  - - -0.38430244841389266
+    - -0.9232055196974404
+    - 0.0017878879355175353
+    - -14.949960325790729
+  - - 0.013515165352961041
+    - -0.003689534554085144
+    - 0.9999018590043096
+    - 0.785867301684724
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+- name: barn1_cellar
+  files:
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 014-keller1.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 015-keller2.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 016-keller3.e57
+  - /Data/pointconfidence/train/gt/scheune1/scheune_hochdorf- Setup 017-keller4.e57
+  merged_gt_las: /Data/pointconfidence/train/gt/merged/scheune1_keller_ring_gt.las
+  initial_matrix:
+  - - -0.9242079645151684
+    - 0.38173697855004224
+    - 0.010794328798599272
+    - -16.967548901589073
+  - - -0.3817279725395039
+    - -0.9242699665443551
+    - 0.0029637687114036125
+    - -14.683824449946458
+  - - 0.01110825403056248
+    - -0.0013813585991540012
+    - 0.9999373473077262
+    - 0.6515123881877507
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+- name: barn2_main
+  files:
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 002.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 003.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 004.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 005.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 006.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 007.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 008.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 009.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 010.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 011.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 012.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 013.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 016.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 017.e57
+  merged_gt_las: /Data/pointconfidence/train/gt/merged/scheune2_main_ring_gt.las
+  initial_matrix:
+  - - 0.8374952407157407
+    - 0.5463469862110337
+    - -0.01032921289818374
+    - 45.810148861032296
+  - - -0.5462749735427601
+    - 0.8375566266861724
+    - 0.009085717358725551
+    - -31.020852983213796
+  - - 0.013615255004045023
+    - -0.0019666546332015025
+    - 0.9999053741576253
+    - -0.6153764505153844
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+- name: barn2_room
+  files:
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 014-raum1.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 015-raum2.e57
+  merged_gt_las: /Data/pointconfidence/train/gt/merged/scheune2_raum_ring_gt.las
+  initial_matrix:
+  - - 0.837709987666692
+    - 0.5460784604322297
+    - -0.006347583595473219
+    - 45.80481970852209
+  - - -0.5459736566868681
+    - 0.8377008182923731
+    - 0.013042435381115897
+    - -31.080399355926303
+  - - 0.012439569000762781
+    - -0.007460165044309928
+    - 0.9998947960811265
+    - -0.6749674035770504
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+- name: barn2_north
+  files:
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 018.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 019.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 020.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 021.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 022.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 023.e57
+  - /Data/pointconfidence/train/gt/scheune2 (1)/Job 005- Setup 024.e57
+  merged_gt_las: /Data/pointconfidence/train/gt/merged/scheune2_north_ring_gt.las
+  initial_matrix:
+  - - 0.8359542383284658
+    - 0.5487121132132837
+    - -0.009773864953572048
+    - 45.77082857838081
+  - - -0.5485877245550327
+    - 0.8359939594682845
+    - 0.012868880470122841
+    - -31.18889633693382
+  - - 0.015232202654988286
+    - -0.005395972925258398
+    - 0.9998694232986809
+    - -0.5489050711375558
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+output_frame: original
+coarse:
+  enabled: true
+  n_candidates: 6
+  slam_percentile: 0.1
+  cell: 0.3
+  band:
+  - 1.0
+  - 8.0
+  yaw_step: 2.0
+  refine_step: 0.25
+  try_flip: false
+visibility:
+  resolution: 0.05
+  eps0: 0.02
+  eps_rate: 0.002
+  behind_tolerance: 0.1
+rounds: 2
+icp:
+  levels:
+  - - 0.4
+    - 1.2
+  - - 0.2
+    - 0.6
+  - - 0.1
+    - 0.25
+  max_iter: 60
+  tukey_k: 0.1
+knn:
+  enabled: true
+  k: 6
+  margin: 1.0
+  recompute: false
+tau: 0.05
+c2c_max_dist: 0.5
+gt_crop:
+  enabled: false
+  radius: 0.5
+tile_size: null
+tile_budget: 8000000
+max_tilt_deg: 5.0

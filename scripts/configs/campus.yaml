@@ -1,0 +1,95 @@
+# The campus scene: an outdoor site with vegetation, 20 RTC360 stations in one
+# project. The SLAM cloud is mapped with down_size 0.2 and downsample_average
+# false, which is the configuration used throughout. Paths are absolute and
+# point at our storage; change them before running.
+#
+# Geometrically the mid-size case: the dense core measures about 56 x 64 m, so
+# the ICP levels and the raster cell sit between those of an indoor room and
+# those of a kilometre-long outdoor walk.
+
+name: campus
+
+slam_las: /Data/pointconfidence/d02/holzkirchen/holzkirchen_merged/global_map.pcd
+
+gt_groups:
+  - name: campus
+    # The hand-cleaned reference: people present in it but absent from the SLAM
+    # run have been cropped out.
+    #
+    # No e57_dir: the visibility panoramas are built from THIS cropped cloud,
+    # not from the original stations. Building them from the stations would keep
+    # the cropped-out returns casting occlusion shadows, so points near them
+    # would still find a reference neighbour and be labelled clean.
+    # Buildings only. The SLAM run and the reference scan are 13 months apart,
+    # so the vegetation differs between them; it is cropped out
+    # because its apparent errors are scene change, not measurement error.
+    merged_gt_las: /Data/pointconfidence/train/gt/merged/holzkirchen_gt_fixed_tagged_fixed.las
+    # Panoramas from the UNCROPPED cloud, so a point on cropped vegetation is
+    # 'observed' rather than a flyer, and then falls out as OUT_NO_GT.
+    panorama_gt_las: /Data/pointconfidence/train/gt/merged/holzkirchen_gt_fixed_tagged.las
+
+output_frame: campus
+
+max_tilt_deg: 5.0
+
+coarse:
+  enabled: true
+  try_flip: false
+  # The cloud has a tail of distant flyers, so its raw bounding box is many
+  # times the size of the scene. Clipping to the dense core keeps the
+  # correlation statistics on the scene rather than on empty padding.
+  slam_percentile: 0.1
+  # Repeated bays and corridors give several near-equal yaw peaks, so probe the
+  # distinct ones with a short ICP rather than trusting the correlation score.
+  n_candidates: 4
+  cell: 0.25
+  # Height band above the local (per-cell) ground for the structure raster.
+  # Stop below the roofline: seen from above a roof fills every cell and
+  # correlates with everything, as the ground does.
+  band: [1.0, 5.0]
+  yaw_step: 2.0
+  refine_step: 0.25
+
+visibility:
+  resolution: 0.05
+  eps0: 0.02
+  eps_rate: 0.002
+  # A point a few cm behind a scanned wall is ordinary range noise on a measured
+  # surface. Keep well under a wall thickness or the gate stops rejecting points
+  # in unscanned neighbouring rooms, which is what it exists for.
+  behind_tolerance: 0.10
+
+rounds: 2
+
+icp:
+  levels:
+    - [0.30, 0.90]
+    - [0.15, 0.45]
+    - [0.08, 0.20]
+  max_iter: 60
+  tukey_k: 0.08
+
+knn:
+  enabled: true
+  k: 6
+  margin: 1.0
+  recompute: false
+
+tau: 0.05
+c2c_max_dist: 0.50
+# The reference is cropped, so a free-space point with no reference within
+# c2c_max_dist is in a region we removed, not a measurable flyer. Clamping it
+# to max_dist would make 34 % of the domain a fabricated outlier.
+drop_unmeasured_free_space: true
+# The crop also deletes surfaces the SLAM cloud still has. A point on one of
+# them would otherwise be labelled against the wrong surface, so such points
+# leave the domain rather than entering it as fabricated outliers.
+drop_cropped_away: true
+cropped_away_margin: 0.01
+
+gt_crop:
+  enabled: false
+  radius: 0.50
+
+tile_size: null
+tile_budget: 8000000

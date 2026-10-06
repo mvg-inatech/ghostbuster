@@ -1,0 +1,23 @@
+<launch>
+  <!-- VoxelSLAM on the Oxford Spires dataset (Hesai QT64 + Alphasense IMU).
+       Mirrors vxlm_ouster_leafcheck.launch: loads the checked-in config and
+       overrides only save_path and bagname, so the config stays untouched.
+       rviz off by default: these runs are meant to be headless. -->
+
+  <arg name="rviz"    default="false" />
+  <arg name="bagname" default="keble-college-02" />
+  <arg name="config"  default="oxford_spires_keble.yaml" />
+  <arg name="outdir"  default="/Data/pointconfidence/public/oxford_spires/slam/" />
+
+  <rosparam command="load" file="$(find voxel_slam)/config/$(arg config)"/>
+  <param name="General/save_path" value="$(arg outdir)"/>
+  <param name="General/bagname"   value="$(arg bagname)"/>
+  <param name="finish" value="false"/>
+
+  <node pkg="voxel_slam" type="voxelslam" name="voxelslam" output="screen"/>
+
+  <group if="$(arg rviz)">
+    <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz"
+          args="-d $(find voxel_slam)/rviz_cfg/back.rviz" />
+  </group>
+</launch>

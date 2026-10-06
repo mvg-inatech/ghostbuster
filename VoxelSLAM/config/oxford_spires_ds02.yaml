@@ -1,0 +1,158 @@
+# VoxelSLAM configuration for the Oxford Spires dataset, used for both Keble
+# College and the Observatory Quarter.
+#
+# Per-scan downsampling is 0.2 m, the same as for our own scenes, so that a
+# model trained on one sensor meets the other at a matching point density.
+#
+# Sequence : sequences/2024-03-12-keble-college-02/raw/rosbag/*.bag
+#            299 s, 3,007 LiDAR scans @10 Hz, 119,865 IMU @401 Hz, bz2, 10.9 GB
+#            uncompressed. Playback is CPU-bound on bz2 decompression.
+# Ground truth: 15 Leica RTC360 stations, 505.5 M points, merged and labelled
+#            with merge_gt_e57.py (same scanner and registration software as our
+#            own scenes, so the labelling half of the pipeline is unchanged).
+#
+# READ THIS BEFORE INTERPRETING A RUN
+# -----------------------------------
+# The sensor is a Hesai QT64, not an Ouster, and that costs channels:
+#
+#   * FAMILY B IS UNAVAILABLE. range_detach / range_edge / int_detach /
+#     ring_rough are computed in ouster_handler from the organised 128x1024
+#     range image. This bag carries height=1, width=60016 -- an unordered list --
+#     and hesai_handler does not build a range image at all. Verified by decoding
+#     a message straight out of the bag.
+#   * reflectivity and ambient DO NOT EXIST on this sensor.
+#   * ring and scan_time ARE now carried: hesai_handler was extended to copy
+#     them, and to explicitly zero every channel this sensor does not measure.
+#     That mattered for correctness, not just completeness -- PointType has no
+#     constructor, so anything the handler left unassigned was indeterminate
+#     stack memory that would have been written out as a plausible float.
+#
+# The cloud is a flat list, but the sampling under it is regular: 64 rings x 600
+# columns at exactly 0.6 deg, in dual-return mode (99.8% of cells hold two
+# points, 98.3% of those identical). A range image is therefore reconstructable,
+# so family B is a bounded piece of work rather than an impossibility.
+#
+# What survives: families C (SLAM-internal), D (local aggregation) and E
+# (geometry) are all sensor-independent and work normally.
+#
+# Provenance of the numbers here:
+#   VERIFIED  - read out of the bag, or derived from the dataset's own
+#               calibration and checked against it.
+#   CARRIED   - taken from config/hesai.yaml, which is tuned for the Hilti
+#               Hesai + Alphasense rig. Same sensor family, different model.
+#   TUNE      - a starting guess. Check these first if the run misbehaves.
+
+General:
+  # VERIFIED from the bag's connection index.
+  lid_topic: "/hesai/pandar"
+  imu_topic: "/alphasense_driver_ros/imu"
+
+  save_path: "/Data/pointconfidence/public/oxford_spires/slam/"
+  bagname: "keble-college-02"
+  previous_map: ""
+
+  lidar_type: 3          # HESAI in LID_TYPE{LIVOX,VELODYNE,OUSTER,HESAI,...}
+
+  # CAREFUL: blind is compared against the SQUARED distance
+  # (feature_point.hpp: if(x*x+y*y+z*z > blind)), so this is m^2, not m.
+  # 0.25 m^2 = 0.5 m. The QT64 is a short-range wide-FoV sensor and the rig is
+  # handheld, so keep this tight or the operator's own body is cut away.
+  blind: 0.25            # TUNE
+
+  point_filter_num: 1    # keep every return: the point cloud is the product here
+
+  # VERIFIED. T_imu_lidar, i.e. the transform taking a LiDAR point into the IMU
+  # frame -- which is what the code wants:
+  #     P_w = R_imu * (extrin.R * P_lidar + extrin.p) + p_imu    (voxelslam.cpp)
+  # Derived from calibration/cam-lidar-imu.yaml as inv(T_cam0_imu) * T_cam0_lidar.
+  # The quaternion order (x,y,z,w) was not assumed: it was determined by checking
+  # C_q_CL against the T_cam_lidar matrix the same file supplies, which matched
+  # to 2e-16. |t| = 8.6 cm, and the rotation is essentially a 90 deg yaw.
+  extrinsic_tran: [-0.000652, -0.015510, 0.084633]
+  extrinsic_rota: [-0.016638, -0.999860,  0.001716,
+                    0.999855, -0.016632,  0.003584,
+                   -0.003555,  0.001775,  0.999992]
+
+  is_save_map: 1
+
+Odometry:
+  # CARRIED from hesai.yaml. Oxford Spires uses the same Alphasense Core IMU as
+  # Hilti, so these transfer better than the Ouster values would. For reference,
+  # calibration/imu.yaml gives gyro noise density 2.26e-4, accel 1.10e-3,
+  # gyro RW 8.25e-6, accel RW 3.39e-5 at 400 Hz.
+  cov_gyr: 0.01
+  cov_acc: 1.0
+  rdw_gyr: 0.0001
+  rdw_acc: 0.0001
+
+  down_size: 0.2         # 0.2 as on our Ouster scenes (was 0.05); the ONLY change
+
+  # Keep FALSE. true makes every saved point the centroid of its 5 cm cell -- not
+  # a measurement -- while its scalar fields come from a different point.
+  downsample_average: false
+
+  # TUNE. The QT64 is specified at +/-3 cm, coarser than the Ouster, so dept_err
+  # may need raising; 0.02 sits between ouster.yaml (0.02) and hesai.yaml (0.01).
+  dept_err: 0.02
+  beam_err: 0.01
+
+  voxel_size: 1
+  min_eigen_value: 0.0025   # CARRIED (hesai.yaml); outdoor scene with vegetation
+  degrade_bound: 100        # CARRIED; outdoor, tolerate more degenerate scans
+  point_notime: 0           # the Hesai message carries per-point timestamps
+
+LocalBA:
+  win_size: 10
+
+  # 4, NOT hesai.yaml's 2. cell_id is the finest-grid index,
+  # voxel_size / 2^max_layer, and every group-aware split in the analysis assumes
+  # the 6.25 cm cell that 1 m / 2^4 gives. max_layer 2 would make it 25 cm and
+  # silently change what "same cell" means relative to our other scenes.
+  max_layer: 4
+
+  cov_gyr: 0.01
+  cov_acc: 1.0
+  rdw_gyr: 0.0001
+  rdw_acc: 0.0001
+  min_ba_point: 1
+
+  # NOTE the key name. voxelslam.cpp:958 reads LocalBA/plane_eigen_value_thre.
+  # ouster.yaml writes `eigen_value_array` here, which the code never looks at,
+  # so that file has silently been running on the [1,1,1,1] default. Only GBA
+  # uses the name `eigen_value_array` (voxelslam.cpp:2802).
+  # plane_eigen_value_thre: [4.0, 4.0, 4.0, 4.0]
+  plane_eigen_value_thre: [1.0, 1.0, 1.0, 1.0]
+  imu_coef: 0.0002
+  thread_num: 20         # the machine has 32 cores
+
+Loop:
+  jud_default: 0.45
+  icp_eigval: 9
+  ratio_drift: 0.1
+  curr_halt: 5
+  prev_halt: 10
+  acsize: 2
+  mgsize: 2
+  isHighFly: 0
+
+GBA:
+  voxel_size: 2
+  min_eigen_value: 0.01
+  eigen_value_array: [4.0, 4.0, 4.0, 4.0]   # this key IS read by GBA
+  total_max_iter: 6
+
+SaveFields:
+  # 0 for anything hesai_handler does not populate -- writing an unset field is
+  # worse than not writing it, because downstream it looks like a measurement.
+  pv_var:           0   # retired everywhere
+  balm_res:         1   # SLAM-internal, sensor-independent
+  ekf_res:          1   # SLAM-internal, sensor-independent
+  cell_id:          1   # needs max_layer 4 above to mean 6.25 cm
+  plane_quality:    1
+  obs_count:        1
+  view_diversity:   1
+  temp_consistency: 1
+  reflectivity:     0   # Ouster-only channel; does not exist on a QT64
+  ambient:          0   # Ouster-only channel; does not exist on a QT64
+  ring:             1   # now wired through hesai_handler (beam index 0-63)
+  scan_time:        1   # now wired through: timestamp - first timestamp, in s

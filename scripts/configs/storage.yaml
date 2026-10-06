@@ -1,0 +1,72 @@
+# The storage scene: indoor, a single hall holding furniture, one RTC360
+# project. SLAM at 0.2 m per-scan downsampling. Paths are absolute and point
+# at our own storage; change them before running.
+#
+# One station group. If the per-station consistency check flags a sub-block,
+# split it into its own group, as the barn config does.
+
+name: storage
+
+# The .pcd straight out of VoxelSLAM — streamed, output is always .las. No
+# pre-registration needed: the coarse stage searches the full 360 deg of yaw.
+slam_las: /Data/pointconfidence/d02/moebellager/moebellager_merged/global_map.pcd
+
+gt_groups:
+  - name: storage
+    e57_dir: /Data/pointconfidence/train/gt/moebellager
+    merged_gt_las: /Data/pointconfidence/train/gt/merged/moebellager_gt.las
+
+# One group, so the output frame is unambiguous.
+output_frame: storage
+
+max_tilt_deg: 5.0
+
+coarse:
+  enabled: true
+  try_flip: false
+  # A furniture warehouse is repetitive racking: several yaw peaks score alike
+  # and the highest-correlation one is not the one that fits. Test the distinct
+  # peaks with a short ICP and keep whichever actually aligns.
+  n_candidates: 6
+  cell: 0.20          # finer than the barn's 0.30: the scene is much smaller
+  # Height band above the local ground for the structure raster. The ground is
+  # excluded deliberately — it covers everything and correlates with everything.
+  band: [0.8, 4.0]    # indoor ceiling height
+  yaw_step: 2.0
+  refine_step: 0.25
+
+visibility:
+  resolution: 0.05
+  eps0: 0.02
+  eps_rate: 0.002
+  # Extra tolerance on the far side only: a point a few cm behind a scanned wall
+  # is ordinary range noise on a measured surface. Keep well under a wall
+  # thickness or the gate stops rejecting unscanned-neighbour-room points.
+  behind_tolerance: 0.10
+
+rounds: 2
+
+icp:
+  # Finer levels: an indoor room about 20 m across.
+  levels:
+    - [0.20, 0.60]
+    - [0.10, 0.30]
+    - [0.05, 0.12]
+  max_iter: 60
+  tukey_k: 0.05
+
+knn:
+  enabled: true
+  k: 6
+  margin: 1.0
+  recompute: false
+
+tau: 0.05
+c2c_max_dist: 0.50
+
+gt_crop:
+  enabled: false
+  radius: 0.50
+
+tile_size: null
+tile_budget: 8000000
