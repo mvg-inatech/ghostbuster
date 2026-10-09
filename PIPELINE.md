@@ -27,7 +27,7 @@ written here, not added afterwards.
 | within-scan family B | `src/range_image.hpp` | computed on the raw organised scan, **before** downsampling |
 | per-point struct | `src/tools.hpp` | the channel list and what each one means |
 | sensor handlers | `src/feature_point.hpp` | Ouster and Hesai; rebuilds the range image for the Hesai |
-| merge to a global map | `scripts/global_pcd_converter.py` | applies the final trajectory, computes `cell_id`, `obs_count`, `view_diversity`, `res_spread` |
+| merge to a global map | `scripts/global_pcd_converter.py` | run by the node itself on `finish`: applies the final trajectory, computes `cell_id`, `obs_count`, `view_diversity`, `res_spread` |
 
 `launch/` and `config/` hold the Ouster and Hesai setups used in the paper.
 
@@ -40,9 +40,10 @@ evaluation domain.
 |---|---|
 | `merge_gt_e57.py` | merge a per-station RTC360 export into one project-frame LAS, keeping the stations separate |
 | `prepare_labels_e57.py` | the main labelling run: coarse alignment, ICP per station group, scanner visibility, C2C |
+| `gate_gt_density.py` | drop points from the domain where the reference is too sparse to support a label. Where the reference samples a surface at spacing *s*, a point lying on it still reports a distance of order *s*/2, so once *s* approaches tau the label measures the scan pattern rather than the cloud. Used on the two Oxford Spires sites, whose references thin out at long range |
 | `stretch_labels.py` | re-label in 15 m trajectory pieces so the labels do not carry drift. The cloud is not moved, only the frame each label is computed in |
 
-**The `gtlabel/` package** holds the logic those three call:
+**The `gtlabel/` package** holds the logic those call:
 
 | module | does |
 |---|---|
@@ -61,7 +62,9 @@ evaluation domain.
 
 ## 3. Features
 
-Run in this order; each adds channels to the labelled cloud.
+Run in this order; each adds channels to the labelled cloud. The released
+clouds stop before this stage, so these three rebuild what the model is fitted
+on.
 
 | script | adds |
 |---|---|

@@ -78,12 +78,11 @@ package and builds with `catkin`; it needs PCL, Eigen and Ceres.
 One scene, held out, from a recorded session. Paths are placeholders.
 
 ```bash
-# 1. SLAM, then merge the scans into one global map with the final trajectory.
-#    The A, B and C channels are written here, per scan.
-roslaunch vxlm_ouster.launch                      # produces alidarState.txt + scans
-python VoxelSLAM/scripts/global_pcd_converter.py \
-    --slam-dir  <slam_out> \
-    --out       <scene>/global_map.las
+# 1. SLAM. The A, B and C channels are written here, per scan. On `finish` the
+#    node runs global_pcd_converter.py itself, merging the scans with the final
+#    trajectory into <bagname>_global/ and completing the per-voxel statistics.
+roslaunch vxlm_ouster.launch
+rosparam set finish true
 
 # 2. Label against the RTC360 stations: registration, visibility, C2C.
 python scripts/prepare_labels_e57.py --config scripts/configs/<scene>.yaml
@@ -98,11 +97,10 @@ python scripts/stretch_labels.py \
     --stretch-metres 15 \
     --out    <scene>/labeled/global_map_feat.las
 
-# 4. Add the neighbourhood families. Order matters: geometry, then its ratios,
-#    then the aggregates.
+# 4. Add the neighbourhood families. Geometry first: the ratios are built from it.
 python scripts/add_geom_features.py      --in <scene>/labeled/global_map_feat.las
-python scripts/add_ratio_features.py     --in <scene>/labeled/global_map_feat.las
 python scripts/add_aggregate_features.py --in <scene>/labeled/global_map_feat.las --ks 30
+python scripts/add_ratio_features.py     --in <scene>/labeled/global_map_feat.las
 
 # 5. Hold one scene out, train on the rest, score every baseline in the same run.
 python scripts/compare_filters.py \
@@ -146,10 +144,3 @@ one combined work.
 
 The dataset is published separately and carries its own licence.
 
-## Not included
-
-This is the core pipeline, not every experiment in the paper. The learned
-denoiser baselines (PointCleanNet, StraightPCF, ASDN) are scored with their
-authors' released checkpoints and are not redistributed here. The classical
-baseline scorers, the Oxford Spires helpers, the figure scripts and the one-off
-diagnostics are also left out.
