@@ -1,15 +1,15 @@
 # GhostBuster
 
-Per-point confidence for LiDAR SLAM maps.
+Per-point confidence for LiDAR SLAM point clouds.
 
 ![Raw, ground truth, SOR and our model on the same scene](teaser_repo.png)
 
-The same slice, with 30 % of the points removed by each method. Ground truth
+<sub>The same slice, with 30 % of the points removed by each method. Ground truth
 removes the points that really are farthest from a survey-grade reference. The
 boxes show the two ways SOR pays for that budget: on the right it keeps clutter,
 because once the scans are merged those points have neighbours, and on the left
 it strips real detail off the structure. Our model keeps the detail and removes
-the clutter.
+the clutter.</sub>
 
 A LiDAR SLAM pipeline knows far more about each point than the finished cloud
 shows: the sensor records how a point was measured, the SLAM how well it fitted
